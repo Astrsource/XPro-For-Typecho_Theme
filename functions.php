@@ -328,7 +328,7 @@ class Add_Config
      */  
     public static function Button()  
     {  
-        echo '<script type="text/javascript" src="/libs/libs.js"></script>';  
+        
     }  
     
     /**  
