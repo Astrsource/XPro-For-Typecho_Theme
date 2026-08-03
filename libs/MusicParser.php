@@ -378,7 +378,16 @@ class MusicHelper
     public static function slim(array $data): array
     {
         $keep = ['name', 'artist', 'pic', 'url', 'source', 'raw_id'];
-        return array_intersect_key($data, array_flip($keep));
+        $slim = array_intersect_key($data, array_flip($keep));
+
+        /* 图片与音源地址统一输出为 https（CDN 兼容 http 时浏览器也会自动升级） */
+        foreach (['pic', 'url'] as $field) {
+            if (!empty($slim[$field]) && is_string($slim[$field])) {
+                $slim[$field] = preg_replace('#^http://#i', 'https://', $slim[$field]);
+            }
+        }
+
+        return $slim;
     }
 }
 
@@ -693,6 +702,7 @@ class KugouParser extends AbstractMusicParser
         $pool = [];
         foreach ($needIds as $hash) {
             $pool[$hash] = [
+                /* media 接口不支持 https（https 请求返回空），音源输出仍会统一转为 https */
                 'url'  => 'http://media.store.kugou.com/v1/get_res_privilege',
                 'opts' => [
                     'post'    => json_encode([
@@ -715,7 +725,13 @@ class KugouParser extends AbstractMusicParser
         $trackPool = [];
         $meta = [];
         foreach ($privs as $hash => $res) {
-            foreach (json_decode($res['body'], true)['data'][0]['relate_goods'] ?? [] as $item) {
+            $parsed = json_decode($res['body'], true);
+            $items  = $parsed['data'][0]['relate_goods'] ?? [];
+            /* 接口新行为：relate_goods 为空时，data[0] 即歌曲本身 */
+            if (empty($items) && !empty($parsed['data'][0]['hash'])) {
+                $items = [$parsed['data'][0]];
+            }
+            foreach ($items as $item) {
                 if (empty($item['hash'])) {
                     continue;
                 }
@@ -735,7 +751,7 @@ class KugouParser extends AbstractMusicParser
                 $pic = !empty($item['info']['image']) ? str_replace('{size}', '400', $item['info']['image']) : '';
                 $meta[$hash] = ['name' => $name, 'artists' => $artists, 'pic' => $pic];
                 $trackPool[$hash] = [
-                    'url' => 'http://trackercdn.kugou.com/i/v2/?hash=' . $item['hash'] . '&key=' . md5($item['hash'] . 'kgcloudv2') . '&pid=3&behavior=play&cmd=25&version=8990'
+                    'url' => 'https://trackercdn.kugou.com/i/v2/?hash=' . $item['hash'] . '&key=' . md5($item['hash'] . 'kgcloudv2') . '&pid=3&behavior=play&cmd=25&version=8990'
                 ];
                 break;
             }

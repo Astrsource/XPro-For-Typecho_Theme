@@ -49,7 +49,7 @@ $renderGallery = static function (array $cfg, string $title, $cid): void {
         ?>
         <a href="<?= $escapedUrl ?>"<?= $classAttr ?><?= $itemAttrs ?> data-fancybox="<?= $group ?>" data-type="image" data-caption="<?php XPro::esc($caption); ?>">
             <figure>
-                <img src="<?= $escapedUrl ?>" alt="<?php XPro::esc($caption); ?>" loading="lazy">
+                <img src="<?= $escapedUrl ?>" alt="<?php XPro::esc($caption); ?>" loading="lazy" decoding="async">
                 <figcaption><?php XPro::esc($caption); ?></figcaption>
             </figure>
         </a>
@@ -71,7 +71,7 @@ $renderCard = static function ($post, array $cfg, bool $pinned = false) use ($re
     $cardClass = $pinned ? 'pinned-card card' : 'card';
     $badge     = $pinned ? '<div class="card-badge"><svg class="icon" aria-hidden="true" viewbox="0 0 24 24"><path d="M22.3126 10.1753L20.8984 11.5895L20.1913 10.8824L15.9486 15.125L15.2415 18.6606L13.8273 20.0748L9.58466 15.8321L4.63492 20.7819L3.2207 19.3677L8.17045 14.4179L3.92781 10.1753L5.34202 8.76107L8.87756 8.05396L13.1202 3.81132L12.4131 3.10422L13.8273 1.69L22.3126 10.1753Z"></path></svg>置顶</div>' : '';
 ?>
-<article class="<?= $cardClass ?>" aria-label="<?php XPro::esc($title); ?>">
+<article class="<?= $cardClass ?>" data-href="<?php $post->permalink(); ?>" aria-label="<?php XPro::esc($title); ?>">
     <?= $badge ?>
     <div class="card-row">
         <img src="<?php XPro::avatar($authorMail, 100, false, (int) $post->authorId); ?>" alt="<?php XPro::esc($author . '的头像'); ?>" class="avatar" loading="lazy">
@@ -81,11 +81,11 @@ $renderCard = static function ($post, array $cfg, bool $pinned = false) use ($re
                 <span class="dot" aria-hidden="true">·</span>
                 <time class="card-date" datetime="<?= $date ?>"><?= $date ?></time>
             </div>
-            <a href="<?php $post->permalink() ?>" class="card-heading"><?php XPro::esc($title); ?></a>
+            <a href="<?php $post->permalink(); ?>" class="card-heading"><?php XPro::esc($title); ?></a>
             <p class="card-excerpt"><?php XPro::esc($excerpt); ?></p>
             <?php $renderGallery($cfg, $title, $post->cid ?? 0); ?>
             <div class="card-actions">
-                <a href="<?php $post->permalink() ?>#comments" class="card-action" aria-label="评论，当前<?= $comments ?>条" role="button">
+                <a href="<?php $post->permalink(); ?>#comments" class="card-action" aria-label="评论，当前<?= $comments ?>条" role="button">
                     <svg class="icon" aria-hidden="true" viewbox="0 0 24 24"><path d="M10 3H14C18.4183 3 22 6.58172 22 11C22 15.4183 18.4183 19 14 19V22.5C9 20.5 2 17.5 2 11C2 6.58172 5.58172 3 10 3ZM12 17H14C17.3137 17 20 14.3137 20 11C20 7.68629 17.3137 5 14 5H10C6.68629 5 4 7.68629 4 11C4 14.61 6.46208 16.9656 12 19.4798V17Z"></path></svg>
                     <span class="count"><?= $comments ?></span>
                 </a>

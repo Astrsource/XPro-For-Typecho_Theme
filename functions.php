@@ -321,15 +321,15 @@ class Widget_Post_hot extends \Widget_Abstract_Contents
 }
 
 class Add_Config  
-{  
+{
     /**  
      * 添加额外编辑器按钮  
      *   
      */  
     public static function Button()  
     {  
-        echo '<script type="text/javascript" src="/libs/libs.js"></script>';  
-    }  
+        echo '<script type="text/javascript" src="'.Helper::options()->themeUrl.'/libs/libs.js"></script>';  
+    }
     
     /**  
      * 加载在头部  
@@ -339,7 +339,7 @@ class Add_Config
     public static function header($archive)  
     {  
         Typecho_Widget::widget('Widget_Options')->add_head();  
-    }  
+    }
     
     /**  
      * 加载在尾部  
@@ -349,5 +349,5 @@ class Add_Config
     public static function footer($archive)  
     {  
         Typecho_Widget::widget('Widget_Options')->add_body();  
-    }  
+    }
 }

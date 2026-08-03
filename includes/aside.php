@@ -137,10 +137,13 @@ $renderBasePost = static function ($post, int $index, string $heatLabel = '热�
                     $commentTime   = (int) $recentComments->created;
                     $commentText   = XPro::excerpt((string) $recentComments->content, 80);
                     $commentLink   = (string) $recentComments->permalink;
+                    /* quote 链接截断评论分页段（/comment-page-N）并去掉锚点，点击仅进入文章 */
+                    $commentQuoteLink = preg_replace('#/comment-page-\d+#i', '', $commentLink) ?? $commentLink;
+                    $commentQuoteLink = preg_replace('/#comment-\d+$/i', '', $commentQuoteLink) ?? $commentQuoteLink;
                     $commentTitle  = (string) $recentComments->title;
                     $isAuthor      = $recentComments->authorId > 0 && $recentComments->authorId === $recentComments->ownerId;
                     ?>
-                    <article class="comment-item" aria-label="<?php XPro::esc($commentAuthor . '的评论'); ?>">
+                    <article class="comment-item" data-href="<?= XPro::esc($commentLink, true) ?>" aria-label="<?php XPro::esc($commentAuthor . '的评论'); ?>">
                         <img src="<?php XPro::avatar($commentMail, 100, false, (int) $recentComments->authorId); ?>" alt="<?php XPro::esc($commentAuthor . '的头像'); ?>" class="avatar" loading="lazy">
                         <div class="comment-item-body">
                             <div class="comment-item-meta">
@@ -151,7 +154,7 @@ $renderBasePost = static function ($post, int $index, string $heatLabel = '热�
                                 <time class="comment-item-date" datetime="<?php XPro::esc(XPro::formatIsoDate($commentTime)); ?>"><?php XPro::esc(XPro::relativeTime($commentTime)); ?></time>
                             </div>
                             <p class="comment-item-text"><?php XPro::esc($commentText); ?></p>
-                            <a class="comment-item-quote" href="<?php XPro::esc($commentLink); ?>"><?php XPro::esc($commentTitle); ?></a>
+                            <a class="comment-item-quote" href="<?php XPro::esc($commentQuoteLink); ?>"><?php XPro::esc($commentTitle); ?></a>
                         </div>
                     </article>
                 <?php } ?>

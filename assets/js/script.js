@@ -1242,7 +1242,11 @@ const CommentManager = {
       setTimeout(function () {
         target.classList.add('highlight');
         target.style.animation = 'commentHighlight 2s ease';
-        setTimeout(function () { target.classList.remove('highlight'); }, 2100);
+        setTimeout(function () {
+          target.classList.remove('highlight');
+          // 保持内联 none，避免 animation-name 回退触发 fadeInUp 重播
+          target.style.animation = 'none';
+        }, 2100);
       }, 50);
     });
   },
@@ -1298,6 +1302,14 @@ _bindFormSubmit() {
     
     var submitHandler = function (e) {
         e.preventDefault();
+        
+        // 评论内容不能为空
+        var textValue = self.textarea ? self.textarea.value.trim() : '';
+        if (!textValue) {
+            SnackbarManager.show('评论内容不能为空', 'danger', 3000);
+            if (self.textarea) self.textarea.focus();
+            return;
+        }
         
         // 防重锁
         if (self.form.dataset.submitting === 'true') {
@@ -2659,6 +2671,54 @@ const AuthorCommentsManager = {
 };
 
 // ============================================================
+// 文章卡片：点击空白处通过 PJAX 加载进入文章
+// ============================================================
+const ArticleCardManager = {
+  _eventsBound: false,
+  ghost: null,
+
+  init() {
+    if (this._eventsBound) return;
+    this._eventsBound = true;
+    Utils.on(document, 'click', (e) => {
+      if (!e.target || !e.target.closest) return;
+      // 交互元素（链接/按钮/图库）不拦截，保持原有行为
+      if (e.target.closest('a, button')) return;
+      const card = e.target.closest('.card[data-href], .comment-item[data-href]');
+      if (!card) return;
+      // 修饰键或非左键点击不处理
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      // 拖拽选择文本时不触发跳转
+      const selection = window.getSelection ? window.getSelection().toString() : '';
+      if (selection && selection.trim()) return;
+      const href = card.getAttribute('data-href');
+      if (!href || href === '#') return;
+      e.preventDefault();
+      this._navigate(href);
+    });
+  },
+
+  _navigate(href) {
+    if (window.xproSwup) {
+      if (!this.ghost || !document.body.contains(this.ghost)) {
+        this.ghost = Utils.create('a', {
+          id: '__pjax_card_trigger',
+          href: '/',
+          'aria-hidden': 'true',
+          tabindex: '-1',
+          style: 'display:none;'
+        });
+        document.body.appendChild(this.ghost);
+      }
+      this.ghost.href = href;
+      this.ghost.click();
+    } else {
+      window.location.href = href;
+    }
+  }
+};
+
+// ============================================================
 // 模块分组（适配 Swup PJAX）
 // ============================================================
 const AppModules = {
@@ -2672,7 +2732,8 @@ const AppModules = {
     ProfileCardManager,
     AccordionManager,
     SnackbarManager,
-    DownloadManager
+    DownloadManager,
+    ArticleCardManager
   ],
   // 内容区模块：每次 Swup 局部刷新后必须重新初始化
   content: [
@@ -3011,12 +3072,63 @@ function initSwup() {
     });
   }
 
+  // ============== 评论锚点：等布局稳定后滚动到位并触发高亮 ==============
+  // 文章较长时，图片懒加载会使页面高度持续变化，Swup 在 page:view 时
+  // 立即按当前高度滚动锚点，导致只滚到一半。这里轮询目标元素位置，
+  // 连续两次稳定（或超时 2s）后再滚动，并触发 commentHighlight 动画。
+  function triggerCommentHighlight(el) {
+    el.classList.remove('highlight');
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.classList.add('highlight');
+    el.style.animation = 'commentHighlight 2s ease';
+    setTimeout(function () {
+      el.classList.remove('highlight');
+      // 保持内联 none，避免 animation-name 回退触发 fadeInUp 重播
+      el.style.animation = 'none';
+    }, 2100);
+  }
+
+  function handleCommentHash() {
+    const hash = window.location.hash;
+    if (!hash || !/^#comment-/.test(hash)) return;
+    const target = document.getElementById(hash.slice(1));
+    if (!target) return;
+    let attempts = 20;
+    let lastTop = -1;
+    let stableCount = 0;
+    const check = function () {
+      const absTop = target.getBoundingClientRect().top + window.pageYOffset;
+      if (absTop === lastTop) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+        lastTop = absTop;
+      }
+      if (stableCount >= 2 || attempts <= 0) {
+        window.scrollTo({
+          top: Math.max(0, absTop - 80),
+          behavior: Utils.prefersReducedMotion() ? 'auto' : 'smooth'
+        });
+        triggerCommentHighlight(target);
+        return;
+      }
+      attempts--;
+      setTimeout(check, 100);
+    };
+    setTimeout(check, 150);
+  }
+
   // 新 DOM 渲染完成，重载所有内容区模块
   swup.hooks.on('page:view', () => {
     AppModules.runGroup(AppModules.content);
     updateSidebarActiveState();
+    handleCommentHash();
     // 如有代码高亮可在此追加 Prism.highlightAll()
   });
+
+  // 首次加载（非 PJAX 导航）时同样处理评论锚点
+  handleCommentHash();
 
   return swup;
 }
