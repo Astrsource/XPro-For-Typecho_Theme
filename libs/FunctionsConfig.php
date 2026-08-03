@@ -431,7 +431,7 @@ XPRO_JS;
         null,
         null,
         _t('head() 函数挂载'),
-        _t('head() 函数挂载的内容，支持 HTML 格式。')
+        _t('head() 函数挂载的内容，支持 HTML 格式。建议添加link、style等标签。')
     );
     $form->addInput($add_head);
 
@@ -440,7 +440,7 @@ XPRO_JS;
         null,
         null,
         _t('footer() 函数挂载'),
-        _t('footer() 函数挂载的内容，支持 HTML 格式。')
+        _t('footer() 函数挂载的内容，支持 HTML 格式。建议添加script等标签。')
     );
     $form->addInput($add_body);
 }
