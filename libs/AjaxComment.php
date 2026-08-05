@@ -152,13 +152,16 @@ class AjaxComment
         }
 
         $feedback = \Typecho\Widget::widget('Widget_Feedback');
+        ob_start();
         try {
             $comment = $feedback->pluginHandle()->comment($comment, $feedback->_content) ?? $comment;
         } catch (\Typecho\Exception $e) {
+            ob_end_clean();
             \Typecho\Cookie::set('__typecho_remember_text', $text);
             echo json_encode(['status' => 0, 'msg' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
             exit;
         }
+        ob_end_clean();
 
         try {
             $insertId = $feedback->insert($comment);
@@ -167,11 +170,28 @@ class AjaxComment
             exit;
         }
 
+        /* 补全邮件通知类插件需要的数据（评论表行中没有文章标题/链接） */
+        $article = $db->fetchRow(
+            $db->select('cid', 'title', 'slug', 'type', 'created')
+                ->from('table.contents')
+                ->where('cid = ?', $cid)
+                ->limit(1)
+        );
+        $feedbackRow = $comment;
+        $feedbackRow['coid'] = $insertId;
+        $feedbackRow['title'] = (string) ($article['title'] ?? '');
+        $feedbackRow['permalink'] = $article
+            ? (string) \Typecho\Router::url((string) ($article['type'] ?? 'post'), $article, $options->index)
+            : '';
+        $feedback->push($feedbackRow);
+
+        ob_start();
         try {
             $feedback->pluginHandle()->finishComment($feedback);
         } catch (\Throwable) {
             // 忽略
         }
+        ob_end_clean();
 
         \Typecho\Cookie::delete('__typecho_remember_text');
 
