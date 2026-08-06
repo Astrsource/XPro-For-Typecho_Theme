@@ -236,7 +236,10 @@ class AjaxComment
             'msg'     => $msg,
             'comment' => $commentItem,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
+
+        /* 通过 Typecho Response 结束请求（内部会 exit）：
+           触发已注册的响应结束回调，兼容依赖异步服务的邮件通知类插件（如 CommentNotifier） */
+        \Typecho\Response::getInstance()->respond();
     }
 
     /**
