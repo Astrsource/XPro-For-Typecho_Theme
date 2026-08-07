@@ -280,10 +280,10 @@ const ProfileCardManager = {
     Utils.on(this.dropdown, 'click', (e) => {
       const item = e.target.closest('.dropdown-item');
       if (!item) return;
-      const isLogout = item.id === 'logout-btn';
-      if (isLogout) {
-        e.preventDefault();
-        this.handleLogout();
+      // 登出交给服务端处理：链接指向 logoutUrl，由 /action/logout 删除登录 Cookie
+      if (item.id === 'logout-btn' && typeof window.clearAuth === 'function') {
+        // 兼容第三方登录状态清理（不影响服务端注销跳转）
+        window.clearAuth();
       }
     });
     Utils.on(document, 'click', (e) => {
@@ -312,17 +312,6 @@ const ProfileCardManager = {
     this.card.setAttribute('aria-expanded', 'false');
   },
 
-  handleLogout() {
-    if (typeof window.clearAuth === 'function') {
-      window.clearAuth();
-    } else {
-      document.cookie.split(';').forEach(cookie => {
-        const [name] = cookie.split('=');
-        document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      });
-      window.location.reload();
-    }
-  }
 };
 
 // ============================================================
