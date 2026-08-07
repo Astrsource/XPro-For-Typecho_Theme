@@ -86,7 +86,7 @@ $formUrl    = $hasLogin
     <h2 class="post-comments-title">评论（<?= $commentsCount; ?>）</h2>
 
     <?php if ($commentAllowed) { ?>
-    <form class="comment-form" id="comment-form" aria-label="发表评论">
+    <form class="comment-form" id="comment-form" aria-label="发表评论" data-cid="<?= $cid; ?>">
         <img src="<?= $formAvatar; ?>" alt="当前用户头像" class="avatar" loading="lazy">
         <div class="comment-form-body">
             <?php if (!$hasLogin) { ?>

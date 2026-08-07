@@ -1326,7 +1326,7 @@ _bindFormSubmit() {
         
         var formData = new FormData(self.form);
         formData.append('themeAction', 'comment');
-        formData.append('cid', window.XPRO_COMMENT_CID || '0');
+        formData.append('cid', self.form.dataset.cid || window.XPRO_COMMENT_CID || '0');
         if (self.currentReplyTo) {
             var id = self.currentReplyTo.replace('comment-', '');
             formData.append('parent', id);

@@ -30,7 +30,11 @@ class AjaxComment
             exit;
         }
 
-        $cid = (int) $archive->request->get('cid', 0);
+        /* 以当前 URL 解析出的文章为准（PJAX 下前端全局 cid 可能是旧页面的残留值） */
+        $cid = (int) ($archive->cid ?? 0);
+        if ($cid <= 0) {
+            $cid = (int) $archive->request->get('cid', 0);
+        }
         if ($cid <= 0) {
             echo json_encode(['status' => 0, 'msg' => '无效的文章'], JSON_UNESCAPED_UNICODE);
             exit;
